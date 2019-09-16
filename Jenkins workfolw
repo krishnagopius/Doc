@@ -1,0 +1,49 @@
+Jenkins Pipeline overview
+The Jenkins Build tool is the tool used to implement the SDLC above. The CICD tribe use Jenkins' Groovy-based "Pipeline" mechanism to implement the Workflows as Jenkins Build Jobs. Thus, for any given development project, there will be 3 separate/distinct Build jobs. The Pipeline mechanism is centralized and is written such that it can be easily applied to the Build jobs that represent the Workflows listed above, with only minimal change required by the Development teams or SCM staff.
+
+
+
+The Pipeline provides the following tasks or "Stages":
+
+Checkout Source code, from either a "Development Integration" or the "master" branch
+Provide a standardized set of tools/scripts to each build job as it executes - e.g. mechanisms to create a source code release branch, a standardized installation script, etc.
+Provide mechanisms to set project-specific parameters to customize the process for a Development Team or individual Project. Some examples include the Nexus repositories to store artifacts in, a user "service account" to install/run an application on a target server.
+Create an application release version, based on the source code branch being used.
+Compile the application
+Run test mechanisms against the application. Currently this consists of OWASP, Sonar and Nexus IQ
+Upload the artifacts to the Nexus Repository Management Server
+Create the installation artifacts, such as RPM files (Docker images will be offered at a future point)
+Install the application to a target environment.
+
+
+These capabilities are available immediately. It is expected they will be added to/extended in the future. The CICD team create/release new versions of the Pipeline mechanism as new features/fixes are made. Those development process for Pipeline releases follow the same processes as described in the "SDLC Concepts" section above.
+
+
+
+Putting it all together
+The images below show a graphical representation of what the 1st two Workflows described above look like. The only real difference between the 2 is the execution of the 'create release branch'; when it is executed, a new git branch is created and the Workflow continues based on that branch.
+
+
+
+
+
+
+
+Figure 1: 'dev-deploy' Workflow
+
+
+
+
+
+
+
+
+
+
+
+
+
+Figure 2: 'release-qa-deploy' Workflow
+
+
+
