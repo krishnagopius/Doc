@@ -1,0 +1,102 @@
+1. Hello World application
+Skip to end of metadata
+TABLE OF CONTENTS
+
+Introduction
+Git repo organization
+Key Points:
+Application Parent POM file
+helloworld-ets-springboot directory
+create-rpms directory
+scm directory
+Git Branches used
+Jenkins Pipeline/Build Jobs
+Introduction
+As part of the onboarding process to the CICD tribe's CICD process, a Maven-based "Hello World" application is provided for teams to review. The application is a Spring Boot based jar file. It:
+
+shows the typical source code organization within a git repository using the CICD process,
+describes the files needed to optionally generate the RPM files to install an application
+describes the SCM related configuration files available to an application
+
+
+The sample application also:
+
+introduces a standard, centralized project-wide 'SCM parent' POM file, maintained in a separate git repo.
+shows the Jenkins Build Jobs needed to build/deploy the applications. These jobs correspond to the 3 Workflows described in 0.0 START HERE: SDLC/Jenkins Build Pipeline concepts/overview
+
+
+This document overviews how Hello World is organized and the CICD Pipeline mechanisms used to build/deploy it to target systems. The document only briefly describes those Pipeline mechanisms; detailed discussion of each component is available elsewhere.
+
+
+
+Git repo organization
+Helloworld consists of a project parent POM file and 3 directories - a subdirectory for application source code, a 'create-rpms' directory and an 'scm' directory, as shown below
+
+
+
+
+
+
+
+
+
+Key Points:
+The application parent POM file lists the Maven Modules to compile. These typically consist of the application source code directory and the create-rpms directory.
+The application source code directory has a Maven POM file and the usual "src/main/java..." tree structure Maven uses. 
+The create-rpms directory contains POM files that are used to generate RPM files for application installation. Any environment specific properties/configuration files can also be generated using this structure
+The scm directory contains files typically set up/supported by an SCM/Devops team supporting a development effort. 
+
+
+Application Parent POM file
+This is the main POM file to compile using Maven. It contains information/modules needed to build the Hello World application. Examples of such information include the Maven Plugins to use, the Maven Modules to build, etc. 
+
+The Application parent POM is also a 'child' POM to a Development Project-wide parent POM file. This POM is used to define information relevant to every development project. See 2. Parent POM files for more information.
+
+
+
+helloworld-ets-springboot directory
+Application source code directory and any Unit Tests. Depending on the application design, there may be one or more such directories in a projects repo, each of which would be represented by Maven Modules in the application parent POM.
+
+
+
+create-rpms directory
+The Hello World application is installed to target systems using RPM files. This directory creates them using the RPM Maven Plugin (http://www.mojohaus.org/rpm-maven-plugin/). The directory consists of a 'create-rpms' parent POM file and a subdirectory to create the application RPM.  The POM files in this structure:
+
+define a Maven 'Profile' that permits optional execution of the POM files. This enables the application to be compiled on systems that don't support RPM generation (e.g. Windows systems),
+creates an RPM that installs the application jar and associated "application.conf" file to /opt/micro-services/helloworld-springboot
+create an RPM that runs the application as a non-privileged 'service' account.
+are extensible: if an application requires environment-specific properties files to be installed, the property file RPM's can be added to this structure.
+scm directory
+This directory contains files typically set up/maintained by an SCM/Devops team. These files are usually set up one time and are typically not changed. Hello World has the following files:
+
+application.conf: a configuration file read by the Java application on startup.
+build_options.txt: a project-specific configuration file used by the CICD Jenkins Pipeline. Parameters are defined as name/value pairs. It currently contains the Nexus IQ Application Name. As the Pipeline develops, it is expected more Parameters will be added.
+envs.xml: a list of target environments used by the Jenkins and Rundeck to deploy Hello World. The file describes each environment the application can be deployed to, which Rundeck Job to invoke to install the application and which list of servers ("Filters") to deploy to. The file lists the application RPM's the Rundeck job should install to that environment. A sample envs.xml is shown below. It shows 2 environments ("ec9-dev" and "ec9-qa"). Both environments use Rundeck job "app-deploy" to install RPM file helloworld-ets-springboot-rpm. The main difference between the jobs is the Rundeck Filter used. The Filter describes the servers Rundeck will install to.
+
+
+
+Git Branches used
+Two git branches are expected to be in play at any time - a "Development Integration" branch for Active Development/SNAPSHOT builds (typically called "develop"), and a git "master" branch. Code on "develop" is typically deployed to a "Development Integration" environment. Application Release versions are typically created from the master branch and installed to non-development environments.
+
+Jenkins Pipeline/Build Jobs
+As described in 0.0 START HERE: SDLC/Jenkins Build Pipeline concepts/overview, there are 3 Build Jobs that support the Pipeline:
+
+A "snapshot-dev-deploy" job compiles code on the Development Integration branch, uploads them to a Nexus Repository and deploys the application to target Development environments using Rundeck. 
+A "release-qa-deploy" job creates a git release branch from "master", compiles the code on it, uploads them to a Nexus Repository and deploys the application to target QA environments using Rundeck.
+A "release-deploy" job installs applications from a Nexus Repository using Rundeck
+
+
+(The Jenkins Pipeline code that perform compilation steps also perform testing to produce Sonar, OWASP  and Nexus IQ reports)
+
+The Build Jobs are defined as Jenkins "Pipeline" jobs. Their configuration consists of:
+
+A Jenkins "Extended Choice Parameter" named targetEnvs, containing a "Source Value" field with a comma-separated list of target environments. The names used must correspond to the env elements in file scm/envs.xml
+A "Pipeline script" definition which invokes the CICD "Standard Pipeline" script. The script takes 2 parameters - the Bitbucket repo to use and the source code branch to process.
+
+
+
+The only difference between the 2 jobs on calling the CICD Pipeline is the git branch to use: if the branch is "master", a new release version is created before building/deploying. If it's anything else, a build/deploy from that branch is performed.
+
+
+
+In the Hello World example, there is one Development environment and one QA environment. If desired, there can be multiple different targets defined for each SDLC environment - e.g. an EC9 Development environment, a BlueBird Site P Development environment and a BlueBird Site S Development environment. 
